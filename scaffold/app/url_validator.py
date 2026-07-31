@@ -19,11 +19,12 @@ def validate_url(url: str) -> str:
     """Format check, normalization, and blocklist validation."""
     if len(url) > MAX_URL_LENGTH:
         raise ValueError("URL exceed max url length")
-    if is_blocked_domain(hostname=url):
-        raise ValueError("This URL is Blocked")
+    
     parsed = urlparse(url)
+    if is_blocked_domain(hostname=parsed.hostname):
+        raise ValueError("This URL is Blocked")
     updated_parsed = parsed._replace(scheme="https")
-    normalized = parsed._replace(netloc=parsed.netloc.lower())
+    normalized = updated_parsed._replace(netloc=updated_parsed.netloc.lower())
     return urlunparse(normalized)
 
     
