@@ -1,4 +1,4 @@
-from urllib.parse import urlparse
+from urllib.parse import urlparse, urlunparse
 
 MAX_URL_LENGTH = 2048
 
@@ -17,6 +17,17 @@ def is_blocked_domain(hostname: str | None) -> bool:
 
 def validate_url(url: str) -> str:
     """Format check, normalization, and blocklist validation."""
+    if len(url) > MAX_URL_LENGTH:
+        raise ValueError("URL exceed max url length")
+    
+    parsed = urlparse(url)
+    if is_blocked_domain(hostname=parsed.hostname):
+        raise ValueError("This URL is Blocked")
+    updated_parsed = parsed._replace(scheme="https")
+    normalized = updated_parsed._replace(netloc=updated_parsed.netloc.lower())
+    return urlunparse(normalized)
+
+    
     # TODO: Implement this function
     #
     # Design decision: normalization keeps the same destination URL mapping to

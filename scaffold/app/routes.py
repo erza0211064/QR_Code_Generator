@@ -53,18 +53,20 @@ def create_qr(req: CreateRequest, db: Session = Depends(get_db)):
 @router.get("/r/{token}")
 def redirect(token: str, request: Request, db: Session = Depends(get_db)):
     """Redirect fallback flow: Cache -> DB -> 404/410 (from slides mermaid diagram)"""
-    # TODO: Implement this function
-    #
-    # Design decision: the redirect path is the hottest path in the system, so
-    # we use a cache-first strategy (Cache -> DB -> 404/410) to minimize DB load
-    # while still handling soft-deleted and expired links.
-    #
-    # Hints:
-    # 1. Check redirect_cache first — on hit, call _record_scan() and return
-    #    RedirectResponse(status_code=302).
-    # 2. On miss, query the DB: raise 404 if not found, 410 if is_deleted or
-    #    past expires_at; otherwise warm the cache, _record_scan(), and 302.
-    raise NotImplementedError("redirect() is not yet implemented")
+    url = redirect_cache.get(token, '')
+    if not url:
+        mapping = _get_mapping_or_404(token=token, db=db, check_delete=True)
+        if not mapping:
+            raise HTTPException(status_code=404, detail="Token not exist")
+        elif mapping.is_deleted == True :
+            raise HTTPException(status_code=410, detail="Token is deleted")
+        elif mapping.expires_at < datetime.utcnow():
+            raise HTTPException(status_code=410, detail="Token is expired")
+        else:
+            redirect_cache[token] = url
+
+    _record_scan(token=token, request=request, db=db)
+    return RedirectResponse(url=url, status_code=302)
 
 
 @router.get("/api/qr/{token}", response_model=QRInfoResponse)
@@ -140,10 +142,11 @@ def get_analytics(token: str, db: Session = Depends(get_db)):
     }
 
 
-def _get_mapping_or_404(token: str, db: Session) -> UrlMapping:
+def _get_mapping_or_404(token: str, db: Session, check_delete: False) -> UrlMapping:
     mapping = db.query(UrlMapping).filter(UrlMapping.token == token).first()
-    if mapping is None or mapping.is_deleted:
-        raise HTTPException(status_code=404, detail="Not Found")
+    if not check_delete:
+        if mapping is None or mapping.is_deleted:
+            raise HTTPException(status_code=404, detail="Not Found")
     return mapping
 
 

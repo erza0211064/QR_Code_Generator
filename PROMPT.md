@@ -16,14 +16,24 @@ Build a dynamic QR code system where:
 Answer these before you start coding:
 
 1. **Static vs Dynamic QR Code:** Why does this system use dynamic QR codes (encode short URL) instead of static (encode original URL directly)? When would you choose static instead?
+By using dynamic QR codes, we can make sure when someone change the original URL, we don't need to regenerate a new token, we only need to look up the table and update the URL. To do this, we need to have a server and DB to store the info, which could also help us to track the changes of the toten and the URL.
 
 2. **Token Generation:** How will you generate short URL tokens? What happens when two different URLs produce the same token? How does collision probability change as the number of tokens grows?
+Using hash map to make sure the URL only make to 1 token. Not sure about the collision
 
 3. **Redirect Strategy:** Why 302 (temporary) instead of 301 (permanent)? What are the trade-offs for analytics, URL modification, and latency?
+using temporary we can better track the user clicking the url, need to be aware of server's loading, but we can add redis to help. If using 301, we won't able to track any info
 
 4. **URL Normalization:** What normalization rules do you need? Why is `http://Example.com/` and `https://example.com` potentially the same URL?
+domain doesn't matter if you are upper case of lower case, but path and other matters, so usually we will make everything lower case.
+Things we need to do:
+1. HTTP -> http
+2. // -> /
+3. remove port (80, 443..)
+4. 
 
 5. **Error Semantics:** What should happen when someone scans a deleted link vs a non-existent link? Should the HTTP status codes be different?
+deleted link we should use 410, non-existent should use 404, it helps the front end to distinguish the difference and help the UI design
 
 ## Verification
 
