@@ -1,0 +1,28 @@
+version: 2.1
+
+jobs:
+  build-and-test:
+    docker:
+      - image: cimg/python:3.12
+
+    steps:
+      - checkout
+
+      # 步驟 1：升級 pip 並安裝所有依賴套件 (會自動抓根目錄的 requirements.txt)
+      - run:
+          name: Install Dependencies
+          command: |
+            python -m pip install --upgrade pip
+            pip install -r requirements.txt
+            pip install pytest httpx
+
+      # 步驟 2：執行測試 (指定 PYTHONPATH=. 讓 pytest 順利抓到 app/ 模組)
+      - run:
+          name: Run tests
+          command: |
+            PYTHONPATH=. python -m pytest --junitxml=junit.xml
+
+workflows:
+  build-and-test-workflow:
+    jobs:
+      - build-and-test
