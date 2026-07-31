@@ -5,16 +5,15 @@ from app.main import app
 from app.routes import redirect_cache
 from app.token_gen import generate_token
 
-client = TestClient(app)
 
-def test_redirect_cache_hit():
+def test_redirect_cache_hit(client):
     redirect_cache["test"] = "http://example.com"
     response = client.get("/r/test", follow_redirects=False)
 
     assert response.status_code == 302
     assert response.headers["location"] == "http://example.com"
 
-def test_redirect_not_found():
+def test_redirect_not_found(client):
     response = client.get("/r/not_exist")
     assert response.status_code == 404
 

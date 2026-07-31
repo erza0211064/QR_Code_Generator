@@ -71,13 +71,13 @@ def redirect(token: str, request: Request, db: Session = Depends(get_db)):
 
 @router.get("/api/qr/{token}", response_model=QRInfoResponse)
 def get_qr_info(token: str, db: Session = Depends(get_db)):
-    mapping = _get_mapping_or_404(token, db)
+    mapping = _get_mapping_or_404(token, db, False)
     return mapping
 
 
 @router.patch("/api/qr/{token}", response_model=QRInfoResponse)
 def update_qr(token: str, req: UpdateRequest, db: Session = Depends(get_db)):
-    mapping = _get_mapping_or_404(token, db)
+    mapping = _get_mapping_or_404(token, db, False)
 
     if req.url is not None:
         try:
@@ -99,7 +99,7 @@ def update_qr(token: str, req: UpdateRequest, db: Session = Depends(get_db)):
 
 @router.delete("/api/qr/{token}")
 def delete_qr(token: str, db: Session = Depends(get_db)):
-    mapping = _get_mapping_or_404(token, db)
+    mapping = _get_mapping_or_404(token, db, False)
     mapping.is_deleted = True
     db.commit()
     # Invalidate cache
@@ -109,7 +109,7 @@ def delete_qr(token: str, db: Session = Depends(get_db)):
 
 @router.get("/api/qr/{token}/image")
 def get_qr_image(token: str, db: Session = Depends(get_db)):
-    _get_mapping_or_404(token, db)
+    _get_mapping_or_404(token, db, False)
     short_url = f"{BASE_URL}/r/{token}"
 
     img = qrcode.make(short_url)
@@ -121,7 +121,7 @@ def get_qr_image(token: str, db: Session = Depends(get_db)):
 
 @router.get("/api/qr/{token}/analytics")
 def get_analytics(token: str, db: Session = Depends(get_db)):
-    _get_mapping_or_404(token, db)
+    _get_mapping_or_404(token, db, False)
 
     total = db.query(func.count(ScanEvent.id)).filter(ScanEvent.token == token).scalar()
 
