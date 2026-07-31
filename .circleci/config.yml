@@ -1,68 +1,28 @@
-# This config was automatically generated from your source code
-# Stacks detected: deps:python:scaffold
 version: 2.1
-orbs:
-  python: circleci/python@2
+
 jobs:
   build-and-test:
     docker:
       - image: cimg/python:3.12
+
     steps:
       - checkout
+
+      # 步驟 1：升級 pip 並安裝所有依賴套件 (會自動抓根目錄的 requirements.txt)
       - run:
           name: Install Dependencies
           command: |
             python -m pip install --upgrade pip
-            if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+            pip install -r requirements.txt
+            pip install pytest httpx
 
+      # 步驟 2：執行測試 (指定 PYTHONPATH=. 讓 pytest 順利抓到 app/ 模組)
       - run:
           name: Run tests
           command: |
             PYTHONPATH=. python -m pytest --junitxml=junit.xml
-  test-python:
-    # Install dependencies and run tests
-    docker:
-      - image: cimg/python:3.12
-    steps:
-      - checkout:
-          path: ~/project
-      - python/install-packages
-      - run:
-          name: Run tests
-          command: pytest --junitxml=junit.xml || ((($? == 5)) && echo 'Did not find any tests to run.')
-      - store_test_results:
-          path: junit.xml
-  deploy:
-    # This is an example deploy job, not actually used by the workflow
-    docker:
-      - image: cimg/base:stable
-    steps:
-      - run:
-          name: Plan deployment
-          command: |-
-            circleci run release plan deploy \
-              --environment-name="default" \
-              --component-name="deploy" \
-              --target-version="1.0.${CIRCLE_BUILD_NUM}-${CIRCLE_SHA1:0:7}"
-      # Replace this with steps to deploy to users
-      - run:
-          name: deploy
-          command: '#e.g. ./deploy.sh'
-      - run:
-          name: Update deployment status to running
-          command: circleci run release update deploy --status=RUNNING
-      - run:
-          name: Update deployment status to success
-          command: circleci run release update deploy --status=SUCCESS
-          when: on_success
-      - run:
-          name: Update deployment status to failed
-          command: circleci run release update deploy --status=FAILED
-          when: on_fail
+
 workflows:
-  build-and-test:
+  build-and-test-workflow:
     jobs:
-      - test-python
-    # - deploy:
-    #     requires:
-    #       - test-python
+      - build-and-test
